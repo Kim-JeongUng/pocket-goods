@@ -131,6 +131,14 @@ export default function AIPanel({
   const [showDailyLimitReached, setShowDailyLimitReached] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const feedScrollRef = useRef<HTMLDivElement>(null);
+  const dragStateRef = useRef({
+    isDragging: false,
+    pointerId: -1,
+    startX: 0,
+    startScrollLeft: 0,
+    moved: false,
+  });
 
   const activeFeed = useMemo(
     () => STYLE_FEED_ITEMS.find((item) => item.id === activeFeedId) ?? null,
@@ -265,6 +273,52 @@ export default function AIPanel({
     }
   };
 
+  const handleFeedPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const container = feedScrollRef.current;
+    if (!container) return;
+
+    dragStateRef.current = {
+      isDragging: true,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startScrollLeft: container.scrollLeft,
+      moved: false,
+    };
+
+    container.setPointerCapture(e.pointerId);
+  };
+
+  const handleFeedPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const container = feedScrollRef.current;
+    const dragState = dragStateRef.current;
+    if (!container || !dragState.isDragging || dragState.pointerId !== e.pointerId) return;
+
+    const deltaX = e.clientX - dragState.startX;
+    if (Math.abs(deltaX) > 3) {
+      dragState.moved = true;
+    }
+    container.scrollLeft = dragState.startScrollLeft - deltaX;
+  };
+
+  const handleFeedPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const container = feedScrollRef.current;
+    const dragState = dragStateRef.current;
+    if (!container || dragState.pointerId !== e.pointerId) return;
+
+    if (container.hasPointerCapture(e.pointerId)) {
+      container.releasePointerCapture(e.pointerId);
+    }
+    dragState.isDragging = false;
+  };
+
+  const handleFeedClickCapture = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!dragStateRef.current.moved) return;
+    e.preventDefault();
+    e.stopPropagation();
+    dragStateRef.current.moved = false;
+  };
+
   return (
     <div
       className={`flex flex-col ${
@@ -296,7 +350,16 @@ export default function AIPanel({
           <span className="text-[10px] text-muted-foreground">좌우로 넘겨 선택</span>
         </div>
 
-        <div className="ai-feed-scroll -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1">
+        <div
+          ref={feedScrollRef}
+          className="ai-feed-scroll -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1"
+          onPointerDown={handleFeedPointerDown}
+          onPointerMove={handleFeedPointerMove}
+          onPointerUp={handleFeedPointerUp}
+          onPointerCancel={handleFeedPointerUp}
+          onPointerLeave={handleFeedPointerUp}
+          onClickCapture={handleFeedClickCapture}
+        >
           {STYLE_FEED_ITEMS.map((item) => {
             const isActive = activeFeedId === item.id;
 

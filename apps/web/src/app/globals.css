@@ -169,10 +169,16 @@
 .ai-feed-scroll {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
+  touch-action: pan-x;
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklab, var(--primary) 55%, white)
     color-mix(in oklab, var(--primary) 8%, white);
+  cursor: grab;
+}
+
+.ai-feed-scroll:active {
+  cursor: grabbing;
 }
 
 .ai-feed-scroll::-webkit-scrollbar {
