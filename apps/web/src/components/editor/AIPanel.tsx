@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -28,13 +27,11 @@ interface AIPanelProps {
 type Mode = "prompt-only" | "from-canvas" | "from-upload";
 
 type Style =
-  | "ghibli"
-  | "sd"
-  | "steampunk"
-  | "fairly-odd"
-  | "powerpuff"
-  | "akatsuki"
-  | "custom";
+  | "animal-crossing"
+  | "ios-emoji"
+  | "maplestory"
+  | "tanning-kitty"
+  | "snoopy";
 
 type StyleFeedItem = {
   id: string;
@@ -46,52 +43,44 @@ type StyleFeedItem = {
 
 const STYLE_FEED_ITEMS: StyleFeedItem[] = [
   {
-    id: "ghibli",
-    title: "지브리 만들기",
-    style: "ghibli",
+    id: "animal-crossing",
+    title: "동물의 숲",
+    style: "animal-crossing",
     preview: "/logo.png",
     basePrompt:
-      "Studio Ghibli 감성의 따뜻한 애니메이션 스타일. 파스텔 톤과 부드러운 수채화 질감, 따뜻한 표정과 자연스러운 디테일을 유지해 캐릭터를 변환해주세요. 배경은 투명으로 유지해주세요.",
+      "닌텐도 스위치 게임 동물의 숲 스타일의 3D 캐릭터 일러스트 화풍을 공부하고, 그 스타일의 이목구비, 의상, 헤어스타일을 따라 하는 얼굴 표현방식을 따라해. 첨부한 이미지 속 인물의 헤어스타일과 옷, 액세서리로 인물 일러스트를 그려줘. 배경은 투명하게 해줘. 자연광 아래의 밝은 햇빛과 부드러운 그림자 효과를 사용해 따뜻하고 발랄한 분위기로 만들어 줘. 실제 동물의숲 플레이 화면에 등장하는 캐릭터처럼 보여야 해, 3D인 점을 명확하게 보여줘.",
   },
   {
-    id: "sd",
-    title: "SD 만들기",
-    style: "sd",
+    id: "ios-emoji",
+    title: "ios 이모지",
+    style: "ios-emoji",
     preview: "/logo.png",
     basePrompt:
-      "일본 SD/치비 스타일로 변환해주세요. 큰 머리와 짧은 팔다리의 귀여운 비율, 선명한 외곽선, 밝은 셀 애니메이션 색감으로 표현해주세요. 배경은 투명으로 유지해주세요.",
+      "사진 속 인물을 애플 ios 이모지 스타일의 3D 배경화면 캐릭터로 만들어줘. 이목구비, 피부색, 표정, 표면 질감 등을 모방하고, 헤어 스타일, 머리 장식, 의상, 포즈까지 그대로 반영해줘. 배경은 투명색이며, 최종 이미지가 ios 공식 이모지처럼 보이게 해줘.",
   },
   {
-    id: "steampunk",
-    title: "스팀펑크 만들기",
-    style: "steampunk",
+    id: "maplestory",
+    title: "메이플스토리",
+    style: "maplestory",
     preview: "/logo.png",
     basePrompt:
-      "스팀펑크 무드로 변환해주세요. 황동 장치, 톱니바퀴, 빈티지 기계 디테일, 빅토리아풍 분위기를 살려 캐릭터를 구성해주세요. 배경은 투명으로 유지해주세요.",
+      "메이플스토리 인게임 캐릭터의 픽셀 캐릭터 느낌으로 만들어줘. 이목구비, 의상, 헤어스타일을 반영한 얼굴표현을 해줘. 스타일, 옷 액세서리는 첨부한 사진을 그대로 반영해줘. 배경은 흰색으로 이미지를 만들어줘.",
   },
   {
-    id: "fairly-odd",
-    title: "수호천사 만들기",
-    style: "fairly-odd",
+    id: "tanning-kitty",
+    title: "태닝키티",
+    style: "tanning-kitty",
     preview: "/logo.png",
     basePrompt:
-      "The Fairly OddParents 느낌의 카툰 스타일로 변환해주세요. 굵고 깔끔한 외곽선, 단순한 플랫 컬러, 과장된 얼굴 비율로 표현해주세요. 배경은 투명으로 유지해주세요.",
+      "첨부 사진을 아래 요청 스타일에 맞춰서 2D 캐릭터화해줘. 헬로키티 스타일로 원작의 얼굴과 몸 비율, 윤곽선은 그대로 유지해줘. 피부색은 밝은 라떼색, 햇볕에 건강하게 그을린 느낌으로 변경해줘 (지나치게 어두운 색은 피함). 원래의 리본, 액세서리, 옷은 사진 스타일에 맞게 조정해줘. 사용자 사진을 참고해서 헤어스타일과 옷 스타일은 그대로 반영해줘. 전체적으로 귀엽고 단순한 산리오 스타일 유지해주고 배경은 투명하게 만들어줘.",
   },
   {
-    id: "powerpuff",
-    title: "파워퍼프걸 만들기",
-    style: "powerpuff",
+    id: "snoopy",
+    title: "스누피",
+    style: "snoopy",
     preview: "/logo.png",
     basePrompt:
-      "파워퍼프걸 스타일로 변환해주세요. 매우 큰 눈, 단순한 얼굴 요소, 둥근 실루엣, 또렷한 라인과 플랫 컬러 느낌으로 표현해주세요. 배경은 투명으로 유지해주세요.",
-  },
-  {
-    id: "custom",
-    title: "커스텀 만들기",
-    style: "custom",
-    preview: "/logo.png",
-    basePrompt:
-      "사용자 요청을 최우선으로 반영해 자유 스타일로 생성해주세요. 캐릭터 중심 구도와 선명한 외곽선을 유지하고, 배경은 투명으로 유지해주세요.",
+      "업로드한 이미지를 Peanuts-style 3D art로 변경해줘. 배경과 옷은 원본 이미지와 비슷하게 표현해주고 스타일만 바꿔줘. PNG 파일로 저장해주고 그 옆에 스누피 캐릭터 형태도 그대로 그려줘.",
   },
 ];
 
@@ -113,9 +102,8 @@ export default function AIPanel({
   } = useImagePreprocessor();
 
   const [mode, setMode] = useState<Mode>("from-upload");
-  const [style, setStyle] = useState<Style>("ghibli");
-  const [prompt, setPrompt] = useState("");
-  const [activeFeedId, setActiveFeedId] = useState<string | null>(null);
+  const [style, setStyle] = useState<Style>("animal-crossing");
+  const [activeFeedId, setActiveFeedId] = useState<string>(STYLE_FEED_ITEMS[0].id);
 
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedPreview, setUploadedPreview] = useState<string | null>(null);
@@ -141,8 +129,8 @@ export default function AIPanel({
     if (activeFeed) {
       return activeFeed.basePrompt;
     }
-    return prompt.trim();
-  }, [activeFeed, prompt]);
+    return "";
+  }, [activeFeed]);
 
   const handleUpload = async (ev: React.ChangeEvent<HTMLInputElement>) => {
     const file = ev.target.files?.[0];
@@ -164,7 +152,6 @@ export default function AIPanel({
   const handleSelectFeedItem = (item: StyleFeedItem) => {
     setActiveFeedId(item.id);
     setStyle(item.style);
-    setPrompt(item.basePrompt);
     setError(null);
   };
 
@@ -390,40 +377,6 @@ export default function AIPanel({
         className="hidden"
         onChange={handleUpload}
       />
-
-      {!activeFeed && (
-        <>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">
-                {style === "custom"
-                  ? e.promptLabelCustom ?? "프롬프트를 자유롭게 입력하세요"
-                  : e.promptLabel ?? "어떤 캐릭터를 만들까요?"}
-              </Label>
-
-            </div>
-
-            <Textarea
-              value={prompt}
-              onChange={(ev) => setPrompt(ev.target.value)}
-              placeholder={
-                style === "custom"
-                  ? e.promptPlaceholderCustom ?? "스타일, 색감, 구도, 분위기 등을 자유롭게 묘사해주세요"
-                  : e.promptPlaceholder ?? "졸린 표정으로 하품하는 캐릭터"
-              }
-              className="resize-none text-sm"
-              rows={style === "custom" ? 4 : 3}
-            />
-
-            {style === "custom" && (
-              <p className="text-[10px] text-muted-foreground">
-                {e.customHint ?? "스타일, 인물, 구도, 배경을 구체적으로 적을수록 결과가 좋아집니다."}
-              </p>
-            )}
-          </div>
-
-        </>
-      )}
 
       <Button className="w-full" onClick={handleGenerate} disabled={loading || !finalPrompt.trim()}>
         {loading ? (
