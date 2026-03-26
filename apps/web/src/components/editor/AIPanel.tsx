@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Sparkles,
   Upload,
@@ -27,6 +28,8 @@ interface AIPanelProps {
 type Mode = "prompt-only" | "from-canvas" | "from-upload";
 
 type Style =
+  | "sylvanian"
+  | "everskies"
   | "animal-crossing"
   | "ios-emoji"
   | "maplestory"
@@ -42,6 +45,22 @@ type StyleFeedItem = {
 };
 
 const STYLE_FEED_ITEMS: StyleFeedItem[] = [
+  {
+    id: "sylvanian",
+    title: "실바니안",
+    style: "sylvanian",
+    preview: "/logo.png",
+    basePrompt:
+      "Transform the person in this photo into a Sylvanian Families (Calico Critters) animal figure. Convert them into a cute anthropomorphic animal (choose an animal that best matches their vibe: tiny beige bunny, rabbit, cat, puppy, bear) wearing a detailed miniature outfit matching their original clothing. Use soft flocked fur texture, tiny black dot eyes, small pink nose, and a gentle expression. Keep the figure isolated and centered on plain white background with neutral studio lighting. No furniture, no background elements, no dollhouse decor.",
+  },
+  {
+    id: "everskies",
+    title: "Everskies",
+    style: "everskies",
+    preview: "/logo.png",
+    basePrompt:
+      "1. Everskies의 픽셀 아트 스타일로 사진을 바꿔주세요. 2. 인체 비율, 얼굴 표정, 의상, 헤어스타일을 그대로 모방해주세요. 3. 첨부 사진 속 인물의 헤어스타일, 옷, 액세서리를 참고해 인물 일러스트를 그려주세요. 4. 배경은 흰색, 인물은 전신으로 그려주세요.",
+  },
   {
     id: "animal-crossing",
     title: "동물의 숲",
@@ -102,8 +121,9 @@ export default function AIPanel({
   } = useImagePreprocessor();
 
   const [mode, setMode] = useState<Mode>("from-upload");
-  const [style, setStyle] = useState<Style>("animal-crossing");
-  const [activeFeedId, setActiveFeedId] = useState<string>(STYLE_FEED_ITEMS[0].id);
+  const [style, setStyle] = useState<Style>("sylvanian");
+  const [activeFeedId, setActiveFeedId] = useState<string | null>(STYLE_FEED_ITEMS[0].id);
+  const [customPrompt, setCustomPrompt] = useState("");
 
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedPreview, setUploadedPreview] = useState<string | null>(null);
@@ -127,10 +147,12 @@ export default function AIPanel({
 
   const finalPrompt = useMemo(() => {
     if (activeFeed) {
-      return activeFeed.basePrompt;
+      return [activeFeed.basePrompt, customPrompt.trim()]
+        .filter(Boolean)
+        .join("\n\n추가 요청: ");
     }
     return "";
-  }, [activeFeed]);
+  }, [activeFeed, customPrompt]);
 
   const handleUpload = async (ev: React.ChangeEvent<HTMLInputElement>) => {
     const file = ev.target.files?.[0];
@@ -150,8 +172,13 @@ export default function AIPanel({
   };
 
   const handleSelectFeedItem = (item: StyleFeedItem) => {
-    setActiveFeedId(item.id);
+    setActiveFeedId((prev) => (prev === item.id ? prev : item.id));
     setStyle(item.style);
+    setError(null);
+  };
+
+  const handleClearSelectedStyle = () => {
+    setActiveFeedId(null);
     setError(null);
   };
 
@@ -289,7 +316,7 @@ export default function AIPanel({
                 key={item.id}
                 type="button"
                 onClick={() => handleSelectFeedItem(item)}
-                className={`group relative h-56 min-w-[220px] snap-start overflow-hidden rounded-2xl border text-left transition-all ${
+                className={`group relative min-w-[180px] snap-start overflow-hidden rounded-2xl border text-left transition-all aspect-[9/16] ${
                   isActive
                     ? "border-primary shadow-[0_12px_30px_rgba(0,0,0,0.18)]"
                     : "border-zinc-200 hover:-translate-y-0.5 hover:border-zinc-300"
@@ -305,10 +332,39 @@ export default function AIPanel({
                 <div className="absolute bottom-3 left-3 right-3 rounded-xl bg-white/95 px-3 py-2 text-center text-sm font-semibold shadow-sm">
                   {item.title}
                 </div>
+                <div className="absolute right-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-medium text-white">
+                  {isActive ? "선택됨" : "선택하기"}
+                </div>
               </button>
             );
           })}
         </div>
+
+        <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs">
+          <span className="text-zinc-600">
+            선택된 스타일: <strong>{activeFeed?.title ?? "없음"}</strong>
+          </span>
+          {activeFeed && (
+            <button
+              type="button"
+              onClick={handleClearSelectedStyle}
+              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-[11px] font-medium text-zinc-600 hover:bg-zinc-100"
+            >
+              선택해제
+            </button>
+          )}
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <Label className="text-xs">+ 추가프롬프트입력하기</Label>
+        <Textarea
+          value={customPrompt}
+          onChange={(event) => setCustomPrompt(event.target.value)}
+          rows={3}
+          placeholder="원하는 추가 요청을 입력해주세요."
+          className="text-xs"
+        />
       </section>
 
       <div className="grid grid-cols-1 gap-1.5">
