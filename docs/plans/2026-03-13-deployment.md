@@ -2,11 +2,11 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** FastAPI를 Railway에, Next.js를 Vercel에 배포하여 라이브 URL을 확보한다.
+**Goal:** FastAPI를 Vercel API에, Next.js를 Vercel에 배포하여 라이브 URL을 확보한다.
 
-**Architecture:** apps/api(Dockerfile 빌드) → Railway, apps/web → Vercel. Supabase/Toss는 이번 배포에 포함하지 않는다.
+**Architecture:** apps/api(Dockerfile 빌드) → Vercel API, apps/web → Vercel. Supabase/Toss는 이번 배포에 포함하지 않는다.
 
-**Tech Stack:** Python 3.13, FastAPI, uvicorn, Next.js 15, Vercel CLI, Railway Dashboard
+**Tech Stack:** Python 3.13, FastAPI, uvicorn, Next.js 15, Vercel CLI, Vercel Dashboard
 
 ---
 
@@ -92,18 +92,18 @@ git push origin main
 
 ---
 
-### Task 5: Railway — FastAPI 배포
+### Task 5: Vercel — FastAPI 배포
 
-**Step 1: Railway 프로젝트 생성**
+**Step 1: Vercel API project 생성**
 
-1. https://railway.app 접속 → New Project
+1. https://vercel-api.app 접속 → New Project
 2. "Deploy from GitHub repo" 선택
 3. `pocket-goods` 저장소 선택
 4. **Root Directory** → `apps/api` 로 설정
 
 **Step 2: 환경변수 설정**
 
-Railway 대시보드 → Variables 탭:
+Vercel 대시보드 → Variables 탭:
 ```
 GEMINI_API_KEY=<새로 발급한 키>
 ```
@@ -111,8 +111,8 @@ GEMINI_API_KEY=<새로 발급한 키>
 **Step 3: 배포 확인**
 
 - Build 로그에서 `Successfully built` 확인
-- `https://<project>.railway.app/health` 접속 → `{"status":"ok"}` 응답 확인
-- Railway URL을 메모해둘 것 (Task 6에서 사용)
+- `https://<project>.vercel-api.app/health` 접속 → `{"status":"ok"}` 응답 확인
+- API Vercel URL을 메모해둘 것 (Task 6에서 사용)
 
 ---
 
@@ -129,7 +129,7 @@ GEMINI_API_KEY=<새로 발급한 키>
 
 Vercel 대시보드 → Settings → Environment Variables:
 ```
-NEXT_PUBLIC_API_URL=https://<task-5에서-얻은-railway-url>
+NEXT_PUBLIC_API_URL=https://<task-5에서-얻은-vercel-api-url>
 ```
 
 **Step 3: 배포**
@@ -166,13 +166,13 @@ git commit -m "chore: restrict CORS to vercel domain"
 git push origin main
 ```
 
-Railway가 자동으로 재배포됨.
+Vercel이 자동으로 재배포됨.
 
 ---
 
 ## 완료 체크리스트
 
-- [ ] `https://<project>.railway.app/health` → `{"status":"ok"}`
+- [ ] `https://<project>.vercel-api.app/health` → `{"status":"ok"}`
 - [ ] `https://<project>.vercel.app` → 디자인 에디터 접속 가능
 - [ ] 캔버스에서 AI 기능 호출 시 API 응답 정상
 - [ ] CORS 도메인이 `*` 가 아닌 Vercel URL로 제한됨

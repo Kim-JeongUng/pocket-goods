@@ -10,9 +10,9 @@ npm ci
 npm run dev
 ```
 
-기본 API 주소는 `NEXT_PUBLIC_API_URL`입니다. 로컬 개발에서는 값이 없으면 `http://localhost:8000`을 사용하고,
-배포 도메인(`pocket-goods.com`, `pocketgoods.kr`, Vercel preview)에서는 실수로 브라우저가 사용자 PC의
-`localhost:8000`을 호출하지 않도록 Railway API(`https://pocket-goods-production.up.railway.app`)로 fallback합니다.
+기본 API 주소는 `NEXT_PUBLIC_API_URL`입니다. 로컬 개발에서는 값이 없으면 `http://localhost:8000`을 사용합니다.
+운영 Web Vercel project에는 별도 API Vercel deployment URL을 `NEXT_PUBLIC_API_URL`로 설정해야 합니다.
+운영용 API URL을 코드에 하드코딩하지 않습니다.
 
 ## Editor and order flow
 
@@ -40,12 +40,11 @@ npm run dev
 
 PortOne을 다시 활성화할 때는 위 수동 주문 접수 경로를 제거하지 말고, 결제 완료 후 같은 메일/인쇄 이미지 생성 계약을 재사용하세요.
 
-메일 발송은 FastAPI의 `/api/payments/complete`에서 SMTP로 처리합니다. 운영 환경에는 최소한
-`ORDER_EMAIL_SMTP_HOST`, `ORDER_EMAIL_SMTP_PORT`, `ORDER_EMAIL_SMTP_USER`, `ORDER_EMAIL_SMTP_PASSWORD`,
-`ORDER_EMAIL_FROM`을 설정해야 합니다. 수신자는 기본 `kju7859@gmail.com`이며 `ORDER_EMAIL_TO` 또는
-`ORDER_OWNER_EMAIL`로 바꿀 수 있습니다. Gmail을 쓰는 경우 일반 비밀번호가 아니라 앱 비밀번호를
-`ORDER_EMAIL_SMTP_PASSWORD`에 넣어야 합니다. 개발 중 메일 미설정을 허용하려면 `ORDER_EMAIL_ALLOW_SKIP=1`을
-명시하세요. 단, 운영에서는 이 값을 켜면 주문 메일이 실제로 발송되지 않습니다.
+메일 발송은 FastAPI의 `/api/payments/complete`에서 Resend Email API로 처리합니다. 운영 API Vercel project에는
+`RESEND_API_KEY`와 Resend에서 인증된 `ORDER_EMAIL_FROM` 또는 `RESEND_FROM_EMAIL`을 설정해야 합니다.
+수신자는 기본 `kju7859@gmail.com`이며 `ORDER_EMAIL_TO` 또는 `ORDER_OWNER_EMAIL`로 바꿀 수 있습니다.
+개발 중 메일 미설정을 허용하려면 `ORDER_EMAIL_ALLOW_SKIP=1`을 명시하세요. 단, 운영에서는 이 값을 켜면
+주문 메일이 실제로 발송되지 않습니다.
 
 ## Verification
 

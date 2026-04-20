@@ -11,7 +11,7 @@
 - **Backend:** FastAPI (Python 3.12)
 - **DB/Storage:** Supabase (PostgreSQL + Storage)
 - **Payment:** Toss Payments
-- **Deploy:** Vercel (Frontend), Railway (FastAPI)
+- **Deploy:** Vercel (Frontend), Vercel FastAPI (Backend)
 
 ## Directory Structure (planned)
 ```

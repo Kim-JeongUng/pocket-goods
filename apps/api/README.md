@@ -1,6 +1,28 @@
 # 포켓굿즈 API 서버
 
-FastAPI 기반 백엔드 (이미지 생성, 내보내기, 누끼 처리)
+FastAPI 기반 백엔드 (이미지 생성, 내보내기, 누끼 처리, Resend 주문 메일)
+
+## Vercel 배포
+
+`apps/api`를 별도 Vercel project root로 연결합니다. Vercel은 `index.py`에서 export되는 FastAPI `app`을 실행합니다.
+
+필수 운영 변수:
+
+```env
+RESEND_API_KEY=
+ORDER_EMAIL_FROM=Pocket Goods <orders@your-domain.com>
+ORDER_EMAIL_TO=kju7859@gmail.com
+ORDER_EMAIL_REQUIRED=1
+
+GCP_LOCATION=global
+GCP_PROJECT_ID=
+GOOGLE_CREDENTIALS=
+
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+Web project에는 이 API project의 배포 URL을 `NEXT_PUBLIC_API_URL`로 설정합니다.
 
 ## 사전 준비: Docker Desktop 설치
 

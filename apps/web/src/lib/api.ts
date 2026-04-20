@@ -1,5 +1,4 @@
 const DEFAULT_LOCAL_API_URL = "http://localhost:8000";
-const PRODUCTION_API_URL = "https://pocket-goods-production.up.railway.app";
 
 function inferApiBaseUrl() {
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -12,16 +11,14 @@ function inferApiBaseUrl() {
 
   const hostname = window.location.hostname;
   if (
-    hostname === "pocket-goods.com" ||
-    hostname === "www.pocket-goods.com" ||
-    hostname === "pocketgoods.kr" ||
-    hostname === "www.pocketgoods.kr" ||
-    hostname.endsWith(".vercel.app")
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.endsWith(".local")
   ) {
-    return PRODUCTION_API_URL;
+    return DEFAULT_LOCAL_API_URL;
   }
 
-  return DEFAULT_LOCAL_API_URL;
+  return "";
 }
 
 export const API_BASE_URL = inferApiBaseUrl();

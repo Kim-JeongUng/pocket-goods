@@ -9,7 +9,7 @@
 
 - 모노레포 구조: `apps/web`(Next.js), `apps/api`(FastAPI)
 - 핵심 사용자 흐름: 랜딩(`/`) → 에디터(`/design`) → AI 이미지 생성/편집 → 미리보기/칼선 확인 → 주문 접수 또는 내보내기(`/api/export`)
-- 배포 구조: 프론트(Vercel), API(Railway), 로컬 통합 실행은 `docker-compose.yml`로 가능
+- 배포 구조: 프론트(Vercel), API(Vercel FastAPI), 로컬 통합 실행은 `docker-compose.yml`로 가능
 - 모바일 최초 빈 캔버스 AI 시작 흐름과 버튼 배치 리뷰 기준은 `docs/ux-ai-start-flow.md`에 따로 정리되어 있습니다.
 
 ---
@@ -35,8 +35,8 @@
   `docs/supabase-user-persistence.sql`을 적용해야 기기 간 복원이 활성화됩니다.
 
 ### 연동 포인트
-- 프론트는 `NEXT_PUBLIC_API_URL`을 우선 사용합니다. 로컬에서는 기본값 `http://localhost:8000`, 배포 도메인에서는
-  `NEXT_PUBLIC_API_URL` 누락 시 Railway API로 fallback합니다.
+- 프론트는 `NEXT_PUBLIC_API_URL`을 우선 사용합니다. 로컬에서는 기본값 `http://localhost:8000`을 사용합니다.
+  배포 도메인에서는 운영용 API URL을 하드코딩하지 않으므로 Web Vercel project에 API Vercel URL을 반드시 설정합니다.
 - Docker Compose에서는 웹 컨테이너가 `NEXT_PUBLIC_API_URL=http://api:8000`을 사용.
 
 ---
@@ -99,12 +99,12 @@ npm run dev
 - `GEMINI_API_KEY` (개발용 Gemini Developer API fallback)
 - `SUPABASE_URL` (인증/스토리지 연동 시)
 - `SUPABASE_SERVICE_ROLE_KEY` (인증 검증/업로드 시)
-- `ORDER_EMAIL_SMTP_HOST`, `ORDER_EMAIL_SMTP_PORT`, `ORDER_EMAIL_SMTP_USER`, `ORDER_EMAIL_SMTP_PASSWORD`,
-  `ORDER_EMAIL_FROM` (주문 완료 메일 필수)
+- `RESEND_API_KEY`, `ORDER_EMAIL_FROM` 또는 `RESEND_FROM_EMAIL` (주문 완료 메일 필수)
+- `ORDER_EMAIL_REQUIRED=1` (운영에서 메일 실패를 즉시 드러내기 위해 권장)
 - `ORDER_EMAIL_TO` 또는 `ORDER_OWNER_EMAIL` (기본 수신자 `kju7859@gmail.com`을 바꿀 때)
 
 ### `apps/web/.env.local`
-- `NEXT_PUBLIC_API_URL` (로컬 기본: `http://localhost:8000`, 배포 fallback: Railway API)
+- `NEXT_PUBLIC_API_URL` (운영 필수: API Vercel deployment URL, 로컬 기본: `http://localhost:8000`)
 - `NEXT_PUBLIC_SUPABASE_URL` (로그인 기능 사용할 때)
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (로그인 기능 사용할 때)
 - PortOne 공개 키는 현재 수동 주문 접수 모드에서는 필수값이 아닙니다. 다시 활성화할 때는 결제 완료 후에도

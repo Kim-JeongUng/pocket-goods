@@ -29,6 +29,7 @@ const orderPricing = read("src/lib/order-pricing.ts");
 const api = read("src/lib/api.ts");
 const paymentsApi = read("../api/routers/payments.py");
 const apiMain = read("../api/main.py");
+const apiVercelConfig = read("../api/vercel.json");
 const rendererApi = read("../api/services/renderer.py");
 const generateApi = read("../api/routers/generate.py");
 
@@ -54,6 +55,10 @@ test("owner order email is addressed and includes order metadata plus cutline-fr
   assert.match(paymentsApi, /주문시간:/);
   assert.match(paymentsApi, /주문자\/배송 정보/);
   assert.match(paymentsApi, /with_cutting_line=False/);
+  assert.match(paymentsApi, /RESEND_EMAIL_ENDPOINT\s*=\s*"https:\/\/api\.resend\.com\/emails"/);
+  assert.match(paymentsApi, /RESEND_API_KEY/);
+  assert.match(paymentsApi, /base64\.b64encode/);
+  assert.doesNotMatch(paymentsApi, new RegExp("smt" + "plib|S" + "MTP"));
   assert.match(paymentsApi, /canvasJSON/);
   assert.match(previewDialog, /canvasJSON:\s*payload\.canvasJSON/);
   assert.match(cartDialog, /canvasJSON:\s*item\.canvasJSON/);
@@ -126,15 +131,16 @@ test("order submit shows immediate completion and clears stale dialog messages",
 });
 
 test("production order calls do not fall back to browser localhost", () => {
-  assert.match(api, /PRODUCTION_API_URL\s*=\s*"https:\/\/pocket-goods-production\.up\.railway\.app"/);
-  assert.match(api, /hostname === "pocket-goods\.com"/);
-  assert.match(api, /hostname\.endsWith\("\.vercel\.app"\)/);
+  assert.doesNotMatch(api, new RegExp("up\\.rail" + "way\\.app|PRODUCTION_API_URL", "i"));
+  assert.match(api, /NEXT_PUBLIC_API_URL/);
+  assert.match(api, /return "";/);
   assert.match(api, /readApiError/);
   assert.equal(previewDialog.includes("localhost:8000"), false);
   assert.equal(cartDialog.includes("localhost:8000"), false);
   assert.equal(orderDialog.includes("localhost:8000"), false);
   assert.equal(previewPage.includes("localhost:8000"), false);
   assert.match(apiMain, /allow_origin_regex=r"https:\/\/\.\*\\\.vercel\\\.app"/);
+  assert.match(apiVercelConfig, /"destination":\s*"\/index\.py"/);
 });
 
 test("order shipping address uses searchable postcode flow with detail-only manual entry", () => {

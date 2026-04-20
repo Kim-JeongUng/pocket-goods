@@ -405,10 +405,10 @@ git push origin main
 
 ## 완료 확인
 
-Railway 재배포 후:
+Vercel API 재배포 후:
 
 ```bash
-curl -X POST https://pocket-goods-production.up.railway.app/api/export \
+curl -X POST https://<api-vercel-url>/api/export \
   -H "Content-Type: application/json" \
   -d '{"canvas_json": {"objects": [], "background": ""}, "product_type": "sticker", "save_to_storage": true}' \
   | python3 -m json.tool

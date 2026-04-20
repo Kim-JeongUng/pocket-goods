@@ -1,10 +1,10 @@
+import base64
 import logging
 import os
-import smtplib
 from datetime import datetime, timedelta, timezone
-from email.message import EmailMessage
 from typing import Any, Literal
 
+import requests
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
@@ -24,6 +24,7 @@ PRINT_PRICE_KRW = {
     "A4": 6000,
 }
 ORDER_OWNER_EMAIL = "kju7859@gmail.com"
+RESEND_EMAIL_ENDPOINT = "https://api.resend.com/emails"
 
 
 def _env_flag(name: str) -> bool:
@@ -171,71 +172,80 @@ def _send_owner_order_email(
     attachments: list[tuple[str, bytes]],
 ) -> bool:
     owner_email = os.getenv("ORDER_EMAIL_TO") or os.getenv("ORDER_OWNER_EMAIL", ORDER_OWNER_EMAIL)
-    smtp_host = os.getenv("ORDER_EMAIL_SMTP_HOST") or os.getenv("SMTP_HOST")
-    if not smtp_host:
+    resend_api_key = os.getenv("RESEND_API_KEY")
+    from_email = os.getenv("ORDER_EMAIL_FROM") or os.getenv("RESEND_FROM_EMAIL")
+
+    if not resend_api_key or not from_email:
+        missing = [
+            name
+            for name, value in (
+                ("RESEND_API_KEY", resend_api_key),
+                ("ORDER_EMAIL_FROM/RESEND_FROM_EMAIL", from_email),
+            )
+            if not value
+        ]
         logger.error(
-            "[payments] owner email failed: ORDER_EMAIL_SMTP_HOST/SMTP_HOST is not configured; "
-            "set ORDER_EMAIL_SMTP_HOST, ORDER_EMAIL_SMTP_PORT, ORDER_EMAIL_SMTP_USER, "
-            "ORDER_EMAIL_SMTP_PASSWORD, and ORDER_EMAIL_FROM on the API server."
+            "[payments] owner email failed: missing Resend configuration: %s",
+            ", ".join(missing),
         )
         if _env_flag("ORDER_EMAIL_ALLOW_SKIP"):
             return False
         raise HTTPException(
             status_code=503,
             detail=(
-                "주문 이메일 SMTP 설정이 없어 메일을 보낼 수 없습니다. "
-                "API 서버 환경변수 ORDER_EMAIL_SMTP_HOST, ORDER_EMAIL_SMTP_PORT, "
-                "ORDER_EMAIL_SMTP_USER, ORDER_EMAIL_SMTP_PASSWORD, ORDER_EMAIL_FROM을 설정해주세요."
+                "주문 이메일 Resend 설정이 없어 메일을 보낼 수 없습니다. "
+                "API 서버 환경변수 RESEND_API_KEY와 ORDER_EMAIL_FROM 또는 RESEND_FROM_EMAIL을 설정해주세요."
             ),
         )
 
-    smtp_port = int(os.getenv("ORDER_EMAIL_SMTP_PORT") or os.getenv("SMTP_PORT") or "587")
-    smtp_user = os.getenv("ORDER_EMAIL_SMTP_USER") or os.getenv("SMTP_USER")
-    smtp_password = os.getenv("ORDER_EMAIL_SMTP_PASSWORD") or os.getenv("SMTP_PASSWORD")
-    from_email = os.getenv("ORDER_EMAIL_FROM") or smtp_user or owner_email
-    use_ssl = _env_flag("ORDER_EMAIL_SMTP_SSL") or smtp_port == 465
-    use_starttls = (os.getenv("ORDER_EMAIL_SMTP_STARTTLS") or "true").lower() not in ("0", "false", "no")
-
-    message = EmailMessage()
-    message["Subject"] = f"[포켓굿즈] 새 주문 접수 {req.paymentId}"
-    message["From"] = from_email
-    message["To"] = owner_email
-    message.set_content(
-        "\n\n".join(
-            [
-                "새 주문이 접수되었습니다.",
-                f"주문번호: {req.paymentId}",
-                f"주문시간: {order_time.strftime('%Y-%m-%d %H:%M:%S %Z')}",
-                f"주문명: {req.orderName}",
-                f"금액: {amount:,}원",
-                "주문 수량:\n" + _format_order_items(req),
-                "주문자/배송 정보:\n" + _format_shipping(req.shipping),
-                "첨부 이미지는 칼선, 주문자 정보, 주문시간, 주문번호를 합성하지 않은 출력 이미지입니다.",
-            ]
-        )
+    text_body = "\n\n".join(
+        [
+            "새 주문이 접수되었습니다.",
+            f"주문번호: {req.paymentId}",
+            f"주문시간: {order_time.strftime('%Y-%m-%d %H:%M:%S %Z')}",
+            f"주문명: {req.orderName}",
+            f"금액: {amount:,}원",
+            "주문 수량:\n" + _format_order_items(req),
+            "주문자/배송 정보:\n" + _format_shipping(req.shipping),
+            "첨부 이미지는 칼선, 주문자 정보, 주문시간, 주문번호를 합성하지 않은 출력 이미지입니다.",
+        ]
     )
-    for filename, content in attachments:
-        message.add_attachment(content, maintype="image", subtype="png", filename=filename)
+    payload: dict[str, Any] = {
+        "from": from_email,
+        "to": [owner_email],
+        "subject": f"[포켓굿즈] 새 주문 접수 {req.paymentId}",
+        "text": text_body,
+    }
+    if attachments:
+        payload["attachments"] = [
+            {
+                "filename": filename,
+                "content": base64.b64encode(content).decode("ascii"),
+            }
+            for filename, content in attachments
+        ]
 
     try:
-        if use_ssl:
-            with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=30) as smtp:
-                if smtp_user and smtp_password:
-                    smtp.login(smtp_user, smtp_password)
-                smtp.send_message(message)
-        else:
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as smtp:
-                if use_starttls:
-                    smtp.starttls()
-                if smtp_user and smtp_password:
-                    smtp.login(smtp_user, smtp_password)
-                smtp.send_message(message)
+        response = requests.post(
+            RESEND_EMAIL_ENDPOINT,
+            headers={
+                "Authorization": f"Bearer {resend_api_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=30,
+        )
+        response.raise_for_status()
     except Exception as exc:
         logger.exception("[payments] owner email failed: %s", exc)
         if _env_flag("ORDER_EMAIL_REQUIRED"):
-            raise HTTPException(status_code=502, detail="주문 이메일 발송에 실패했습니다.") from exc
+            detail = "주문 이메일 발송에 실패했습니다."
+            if isinstance(exc, requests.HTTPError) and exc.response is not None:
+                detail = f"{detail} Resend 응답: {exc.response.text[:500]}"
+            raise HTTPException(status_code=502, detail=detail) from exc
         return False
 
+    logger.info("[payments] owner email sent via Resend to=%s", owner_email)
     return True
 
 

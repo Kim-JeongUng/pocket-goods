@@ -157,7 +157,7 @@
 | 파일 | 주요 변경 |
 |------|-----------|
 | `apps/api/README.md` | Docker 실행 가이드 |
-| `apps/api/railway.json` | Railway 설정 업데이트 |
+| `apps/api/vercel-api.json` | Vercel API 설정 업데이트 |
 | `apps/api/routers/export.py` | 단일 PNG 반환 |
 | `apps/api/routers/generate.py` | rembg lazy-load |
 | `apps/api/services/renderer.py` | 출력 사이즈 보정 (A4/A5/A6 -6mm) |

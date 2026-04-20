@@ -162,7 +162,7 @@ updated_at      TIMESTAMPTZ
 | Database  | PostgreSQL via Supabase                      | 관리형, RLS 지원              |
 | Storage   | Supabase Storage                             | DB와 동일 플랫폼, 간단한 연동 |
 | Payment   | Toss Payments                                | 국내 간편결제 최적화          |
-| Hosting   | Vercel (Frontend) + Railway/Fly.io (FastAPI) | 각 레이어 최적화              |
+| Hosting   | Vercel (Frontend) + Vercel Functions (FastAPI) | 각 레이어 최적화              |
 | Image Lib | Pillow, CairoSVG, rembg                      | 서버 사이드 이미지 합성       |
 
 ### Fabric.js vs Konva.js 결정
@@ -192,7 +192,7 @@ updated_at      TIMESTAMPTZ
           │ POST /api/export
           ▼
 ┌─────────────────────────────────┐
-│  FastAPI Server (Railway)       │
+│  FastAPI Server (Vercel)       │
 │  Pillow / CairoSVG 합성         │
 │  → 300 DPI PNG 생성             │
 └──────────────┬──────────────────┘
@@ -220,7 +220,7 @@ updated_at      TIMESTAMPTZ
 | **M1** Setup & Canvas   | Day 1–3   | Next.js 세팅, Fabric.js 캔버스 기초(캐릭터 배치, 텍스트)          |
 | **M2** Preview & Export | Day 4–6   | 목업 실시간 프리뷰, FastAPI Export 엔드포인트, S3/Supabase 업로드 |
 | **M3** Order & Payment  | Day 7–10  | Toss Payments 연동, 주문 DB, 결제 후 파일 생성 트리거             |
-| **M4** QA & Deploy      | Day 11–14 | 인쇄 파일 품질 검증, Vercel + Railway 배포, 초기 유저 테스트      |
+| **M4** QA & Deploy      | Day 11–14 | 인쇄 파일 품질 검증, Vercel + Vercel API 배포, 초기 유저 테스트      |
 
 ---
 

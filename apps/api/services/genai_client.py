@@ -15,12 +15,11 @@ GOOGLE_CREDENTIALS_JSON_ENV = "GOOGLE_CREDENTIALS"
 
 
 def _materialize_google_credentials(log_tag: str) -> None:
-    """Allow Railway-style GOOGLE_CREDENTIALS JSON to work as ADC.
+    """Allow env-var GOOGLE_CREDENTIALS JSON to work as ADC.
 
     Google client libraries discover service-account files through
-    GOOGLE_APPLICATION_CREDENTIALS. Railway secrets are easier to manage as one
-    JSON environment variable, so write that value to a temporary file when the
-    entrypoint has not already done it.
+    GOOGLE_APPLICATION_CREDENTIALS. Serverless hosts are easier to manage with a
+    single JSON environment variable, so write that value to a temporary file.
     """
     if os.getenv(GOOGLE_CREDENTIALS_PATH_ENV):
         return
@@ -48,7 +47,7 @@ def _materialize_google_credentials(log_tag: str) -> None:
             status_code=500,
             detail=(
                 "GOOGLE_CREDENTIALS가 올바른 JSON이 아닙니다. "
-                "Railway 변수에는 서비스 계정 JSON 전체를 한 줄 JSON 또는 유효한 멀티라인 값으로 넣어주세요."
+                "배포 환경변수에는 서비스 계정 JSON 전체를 한 줄 JSON 또는 유효한 멀티라인 값으로 넣어주세요."
             ),
         ) from exc
     except ValueError as exc:

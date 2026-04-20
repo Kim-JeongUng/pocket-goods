@@ -38,7 +38,7 @@ FastAPI service
   ├─ Google GenAI image generation
   ├─ Pillow/OpenCV print renderer
   ├─ Background removal pipeline
-  ├─ SMTP order notification
+  ├─ Resend order notification
   └─ Optional Supabase integration
 ```
 
@@ -62,8 +62,9 @@ FastAPI service
 | Rendering | Pillow, NumPy, OpenCV headless |
 | Background removal | rembg, ONNX Runtime |
 | Persistence / Storage | Supabase Python SDK |
-| Notifications | SMTP-based order email dispatch |
-| Container | Docker / Docker Compose |
+| Notifications | Resend Email API |
+| Local runtime | Uvicorn, Docker / Docker Compose |
+| Production runtime | Vercel Python / FastAPI |
 
 ## Key Capabilities
 
@@ -92,7 +93,7 @@ FastAPI service
 ### Manual order intake
 
 - 현재 production flow는 결제창을 열지 않고 manual order receipt 방식으로 동작합니다.
-- 주문 UI는 유효한 payload 생성 직후 즉시 완료 상태를 보여주고, SMTP/export 작업은 background에서 이어서 처리합니다.
+- 주문 UI는 유효한 payload 생성 직후 즉시 완료 상태를 보여주고, Resend/export 작업은 background에서 이어서 처리합니다.
 - 주문 메일에는 주문 metadata와 print-ready artwork attachment가 포함되며, UI overlay나 cutline marking은 합성하지 않습니다.
 
 ## Project Layout
@@ -159,7 +160,7 @@ Web app:
 http://localhost:3000
 ```
 
-`NEXT_PUBLIC_API_URL`이 설정되어 있지 않으면 local browser traffic은 `http://localhost:8000`으로 fallback합니다. Production domain에서는 사용자의 로컬 머신을 호출하지 않도록 `src/lib/api.ts`에 설정된 Railway API fallback을 사용합니다.
+`NEXT_PUBLIC_API_URL`이 설정되어 있지 않으면 local browser traffic은 `http://localhost:8000`으로 fallback합니다. Production에서는 운영용 API URL을 하드코딩하지 않으므로 Web Vercel project에 배포된 API Vercel URL을 `NEXT_PUBLIC_API_URL`로 설정해야 합니다.
 
 ## Environment Variables
 
@@ -171,7 +172,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-### `apps/api/.env` 또는 Railway service variables
+### `apps/api/.env` 또는 API Vercel project variables
 
 ```env
 # Preferred production auth: Gemini on Vertex AI.
@@ -184,20 +185,18 @@ GEMINI_API_KEY=
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 
-ORDER_EMAIL_SMTP_HOST=smtp.gmail.com
-ORDER_EMAIL_SMTP_PORT=587
-ORDER_EMAIL_SMTP_USER=
-ORDER_EMAIL_SMTP_PASSWORD=
+RESEND_API_KEY=
 ORDER_EMAIL_FROM=
 ORDER_EMAIL_TO=
 ORDER_EMAIL_ALLOW_SKIP=0
+ORDER_EMAIL_REQUIRED=1
 ```
 
 AI 생성은 `GCP_PROJECT_ID`가 있으면 Vertex AI를 우선 사용하고, 없을 때만 `GEMINI_API_KEY`로 fallback합니다.
-Railway에서는 서비스 계정 JSON 전체를 `GOOGLE_CREDENTIALS` 변수에 넣으면 API 컨테이너가
-`GOOGLE_APPLICATION_CREDENTIALS` 파일로 변환해 사용합니다.
+Vercel에서는 서비스 계정 JSON 전체를 `GOOGLE_CREDENTIALS` 변수에 넣으면 API가
+`GOOGLE_APPLICATION_CREDENTIALS` 임시 파일로 변환해 사용합니다.
 
-Gmail SMTP를 사용할 경우 `ORDER_EMAIL_SMTP_PASSWORD`에는 계정 비밀번호가 아니라 app password를 넣어야 합니다.
+Resend를 사용할 경우 `ORDER_EMAIL_FROM` 또는 `RESEND_FROM_EMAIL`은 Resend에서 인증된 발신 주소여야 합니다.
 
 ## Supabase Setup
 
@@ -262,11 +261,11 @@ python -m py_compile apps/api/services/renderer.py
 ## Deployment Notes
 
 - Web frontend: Vercel
-- API service: Railway 또는 Docker-capable host
+- API service: Vercel FastAPI project (`apps/api`)
 - Database/Auth: Supabase
-- Order email: API service에 설정된 SMTP provider
+- Order email: API service에 설정된 Resend API
 
-Frontend 환경변수 변경은 Vercel redeploy가 필요합니다. API 환경변수 변경은 API service restart/redeploy가 필요합니다.
+Frontend/API Vercel 환경변수 변경은 각 project redeploy가 필요합니다.
 
 ## Operational Notes
 
