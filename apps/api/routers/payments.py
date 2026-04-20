@@ -24,7 +24,8 @@ PRINT_PRICE_KRW = {
     "A4": 6000,
 }
 ORDER_OWNER_EMAIL = "kju7859@gmail.com"
-ORDER_SENDER_EMAIL = "pocketgoods0000@gmail.com"
+ORDER_SENDER_EMAIL = "onboarding@resend.dev"
+ORDER_REPLY_TO_EMAIL = "pocketgoods0000@gmail.com"
 RESEND_EMAIL_ENDPOINT = "https://api.resend.com/emails"
 
 
@@ -175,6 +176,7 @@ def _send_owner_order_email(
     owner_email = os.getenv("ORDER_EMAIL_TO") or os.getenv("ORDER_OWNER_EMAIL", ORDER_OWNER_EMAIL)
     resend_api_key = os.getenv("RESEND_API_KEY")
     from_email = os.getenv("ORDER_EMAIL_FROM") or os.getenv("RESEND_FROM_EMAIL") or ORDER_SENDER_EMAIL
+    reply_to_email = os.getenv("ORDER_EMAIL_REPLY_TO") or os.getenv("RESEND_REPLY_TO") or ORDER_REPLY_TO_EMAIL
 
     if not resend_api_key:
         logger.error(
@@ -207,6 +209,7 @@ def _send_owner_order_email(
         "to": [owner_email],
         "subject": f"[포켓굿즈] 새 주문 접수 {req.paymentId}",
         "text": text_body,
+        "reply_to": [reply_to_email],
     }
     if attachments:
         payload["attachments"] = [

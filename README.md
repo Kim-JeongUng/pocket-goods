@@ -186,7 +186,8 @@ SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 
 RESEND_API_KEY=
-ORDER_EMAIL_FROM=pocketgoods0000@gmail.com
+ORDER_EMAIL_FROM=onboarding@resend.dev
+ORDER_EMAIL_REPLY_TO=pocketgoods0000@gmail.com
 ORDER_EMAIL_TO=kju7859@gmail.com
 ORDER_EMAIL_ALLOW_SKIP=0
 ORDER_EMAIL_REQUIRED=1
@@ -196,9 +197,9 @@ AI 생성은 `GCP_PROJECT_ID`가 있으면 Vertex AI를 우선 사용하고, 없
 Vercel에서는 서비스 계정 JSON 전체를 `GOOGLE_CREDENTIALS` 변수에 넣으면 API가
 `GOOGLE_APPLICATION_CREDENTIALS` 임시 파일로 변환해 사용합니다.
 
-Resend를 사용할 경우 API key는 `RESEND_API_KEY`에 넣고, 기본 발신자는 `pocketgoods0000@gmail.com`,
-기본 수신자는 `kju7859@gmail.com`입니다. Resend가 발신 주소를 거절하면 Resend에서 인증된 발신 주소로
-`ORDER_EMAIL_FROM`을 바꿔야 합니다.
+Resend를 사용할 경우 API key는 `RESEND_API_KEY`에 넣습니다. `onboarding@resend.dev`는 테스트용 발신자이며,
+운영에서는 Resend에서 인증한 도메인의 주소(예: `orders@pocket-goods.com`)로 `ORDER_EMAIL_FROM`을 바꿔야 합니다.
+답장 주소는 기본 `pocketgoods0000@gmail.com`, 수신자는 기본 `kju7859@gmail.com`입니다.
 
 ## Supabase Setup
 

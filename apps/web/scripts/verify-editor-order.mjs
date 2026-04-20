@@ -50,7 +50,8 @@ test("PortOne browser checkout is disabled on all editor order entry points", ()
 
 test("owner order email is addressed and includes order metadata plus cutline-free image rendering", () => {
   assert.match(paymentsApi, /ORDER_OWNER_EMAIL\s*=\s*"kju7859@gmail\.com"/);
-  assert.match(paymentsApi, /ORDER_SENDER_EMAIL\s*=\s*"pocketgoods0000@gmail\.com"/);
+  assert.match(paymentsApi, /ORDER_SENDER_EMAIL\s*=\s*"onboarding@resend\.dev"/);
+  assert.match(paymentsApi, /ORDER_REPLY_TO_EMAIL\s*=\s*"pocketgoods0000@gmail\.com"/);
   assert.match(paymentsApi, /_send_owner_order_email/);
   assert.match(paymentsApi, /주문번호:/);
   assert.match(paymentsApi, /주문시간:/);

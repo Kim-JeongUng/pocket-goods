@@ -99,7 +99,7 @@ npm run dev
 - `GEMINI_API_KEY` (개발용 Gemini Developer API fallback)
 - `SUPABASE_URL` (인증/스토리지 연동 시)
 - `SUPABASE_SERVICE_ROLE_KEY` (인증 검증/업로드 시)
-- `RESEND_API_KEY` (주문 완료 메일 필수; 기본 발신 `pocketgoods0000@gmail.com`)
+- `RESEND_API_KEY` (주문 완료 메일 필수; 테스트 발신 `onboarding@resend.dev`, 운영은 인증 도메인 발신자 권장)
 - `ORDER_EMAIL_REQUIRED=1` (운영에서 메일 실패를 즉시 드러내기 위해 권장)
 - `ORDER_EMAIL_TO` 또는 `ORDER_OWNER_EMAIL` (기본 수신자 `kju7859@gmail.com`을 바꿀 때)
 
