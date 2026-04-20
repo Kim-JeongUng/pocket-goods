@@ -41,8 +41,8 @@ npm run dev
 PortOne을 다시 활성화할 때는 위 수동 주문 접수 경로를 제거하지 말고, 결제 완료 후 같은 메일/인쇄 이미지 생성 계약을 재사용하세요.
 
 메일 발송은 FastAPI의 `/api/payments/complete`에서 Resend Email API로 처리합니다. 운영 API Vercel project에는
-`RESEND_API_KEY`와 Resend에서 인증된 `ORDER_EMAIL_FROM` 또는 `RESEND_FROM_EMAIL`을 설정해야 합니다.
-수신자는 기본 `kju7859@gmail.com`이며 `ORDER_EMAIL_TO` 또는 `ORDER_OWNER_EMAIL`로 바꿀 수 있습니다.
+`RESEND_API_KEY`를 설정해야 합니다. 발신자는 기본 `pocketgoods0000@gmail.com`, 수신자는 기본
+`kju7859@gmail.com`이며 `ORDER_EMAIL_FROM`, `ORDER_EMAIL_TO` 또는 `ORDER_OWNER_EMAIL`로 바꿀 수 있습니다.
 개발 중 메일 미설정을 허용하려면 `ORDER_EMAIL_ALLOW_SKIP=1`을 명시하세요. 단, 운영에서는 이 값을 켜면
 주문 메일이 실제로 발송되지 않습니다.
 

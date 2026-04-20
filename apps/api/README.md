@@ -10,7 +10,7 @@ FastAPI 기반 백엔드 (이미지 생성, 내보내기, 누끼 처리, Resend 
 
 ```env
 RESEND_API_KEY=
-ORDER_EMAIL_FROM=Pocket Goods <orders@your-domain.com>
+ORDER_EMAIL_FROM=pocketgoods0000@gmail.com
 ORDER_EMAIL_TO=kju7859@gmail.com
 ORDER_EMAIL_REQUIRED=1
 

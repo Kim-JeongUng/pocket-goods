@@ -24,6 +24,7 @@ PRINT_PRICE_KRW = {
     "A4": 6000,
 }
 ORDER_OWNER_EMAIL = "kju7859@gmail.com"
+ORDER_SENDER_EMAIL = "pocketgoods0000@gmail.com"
 RESEND_EMAIL_ENDPOINT = "https://api.resend.com/emails"
 
 
@@ -173,20 +174,11 @@ def _send_owner_order_email(
 ) -> bool:
     owner_email = os.getenv("ORDER_EMAIL_TO") or os.getenv("ORDER_OWNER_EMAIL", ORDER_OWNER_EMAIL)
     resend_api_key = os.getenv("RESEND_API_KEY")
-    from_email = os.getenv("ORDER_EMAIL_FROM") or os.getenv("RESEND_FROM_EMAIL")
+    from_email = os.getenv("ORDER_EMAIL_FROM") or os.getenv("RESEND_FROM_EMAIL") or ORDER_SENDER_EMAIL
 
-    if not resend_api_key or not from_email:
-        missing = [
-            name
-            for name, value in (
-                ("RESEND_API_KEY", resend_api_key),
-                ("ORDER_EMAIL_FROM/RESEND_FROM_EMAIL", from_email),
-            )
-            if not value
-        ]
+    if not resend_api_key:
         logger.error(
-            "[payments] owner email failed: missing Resend configuration: %s",
-            ", ".join(missing),
+            "[payments] owner email failed: missing Resend configuration: RESEND_API_KEY"
         )
         if _env_flag("ORDER_EMAIL_ALLOW_SKIP"):
             return False
@@ -194,7 +186,7 @@ def _send_owner_order_email(
             status_code=503,
             detail=(
                 "주문 이메일 Resend 설정이 없어 메일을 보낼 수 없습니다. "
-                "API 서버 환경변수 RESEND_API_KEY와 ORDER_EMAIL_FROM 또는 RESEND_FROM_EMAIL을 설정해주세요."
+                "API 서버 환경변수 RESEND_API_KEY를 설정해주세요."
             ),
         )
 
