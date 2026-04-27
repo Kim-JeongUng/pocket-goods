@@ -46,8 +46,6 @@ export default function UserMenu({ compact = false }: UserMenuProps) {
   useEffect(() => {
     if (!profileOpen || !user) return;
     let cancelled = false;
-
-    setOrdersLoading(true);
     void loadOrderHistory().then((nextOrders) => {
       if (cancelled) return;
       setOrders(nextOrders);
@@ -84,6 +82,11 @@ export default function UserMenu({ compact = false }: UserMenuProps) {
     user.email?.split("@")[0] ||
     t.common.user;
   const avatarUrl = user.user_metadata?.avatar_url;
+  const handleOpenProfile = () => {
+    setOrders([]);
+    setOrdersLoading(true);
+    setProfileOpen(true);
+  };
   const joinedAt = user.created_at
     ? new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric" }).format(new Date(user.created_at))
     : null;
@@ -107,7 +110,7 @@ export default function UserMenu({ compact = false }: UserMenuProps) {
         <div className="flex items-center gap-1.5">
           <button
             type="button"
-            onClick={() => setProfileOpen(true)}
+            onClick={handleOpenProfile}
             className="rounded-full transition hover:opacity-90"
             title="프로필 보기"
           >
@@ -139,7 +142,7 @@ export default function UserMenu({ compact = false }: UserMenuProps) {
       <div className="flex items-center gap-1.5">
         <button
           type="button"
-          onClick={() => setProfileOpen(true)}
+          onClick={handleOpenProfile}
           className="rounded-full transition hover:opacity-90"
           title="프로필 보기"
         >

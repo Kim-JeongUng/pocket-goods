@@ -101,13 +101,15 @@ export function useSaveDesign(
       } = await supabase.auth.getUser();
       if (!user) return localDraft;
 
-      const draftQuery = () =>
-        supabase
-          .from(DRAFT_TABLE)
-          .select(DRAFT_SELECT_WITH_OUTPUT_SIZE)
-          .eq("user_id", user.id)
-          .maybeSingle();
-      let { data, error } = await draftQuery();
+      let data: DraftRow | null = null;
+      let error: { message: string } | null = null;
+      const primaryResult = await supabase
+        .from(DRAFT_TABLE)
+        .select(DRAFT_SELECT_WITH_OUTPUT_SIZE)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      data = primaryResult.data as DraftRow | null;
+      error = primaryResult.error;
 
       if (error) {
         const legacyResult = await supabase
@@ -115,7 +117,12 @@ export function useSaveDesign(
           .select(DRAFT_SELECT_LEGACY)
           .eq("user_id", user.id)
           .maybeSingle();
-        data = legacyResult.data;
+        data = legacyResult.data
+          ? {
+              ...(legacyResult.data as Omit<DraftRow, "output_size">),
+              output_size: null,
+            }
+          : null;
         error = legacyResult.error;
       }
 

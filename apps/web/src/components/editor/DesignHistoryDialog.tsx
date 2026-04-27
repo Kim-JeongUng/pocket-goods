@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { History, Loader2, LogIn, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { tpl, useLocale } from "@/lib/i18n/client";
 import type { SavedDesignHistoryEntry } from "@/hooks/useSaveDesign";
@@ -131,9 +132,14 @@ export default function DesignHistoryDialog({
                 <h3 className="text-base font-bold text-zinc-950">{copy.signInTitle}</h3>
                 <p className="mt-1 text-sm text-zinc-500">{copy.signInDescription}</p>
               </div>
-              <Button asChild>
-                <Link href="/login?next=/design">{copy.signInAction}</Link>
-              </Button>
+              <Link
+                href="/login?next=/design"
+                className={cn(
+                  "inline-flex h-8 items-center justify-center rounded-lg bg-primary px-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/80",
+                )}
+              >
+                {copy.signInAction}
+              </Link>
             </div>
           ) : error ? (
             <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-3xl border border-red-200 bg-white px-6 text-center">
