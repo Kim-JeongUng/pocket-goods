@@ -2,39 +2,79 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import type { OutputSize } from "@/lib/order-pricing";
 
 const STORAGE_KEY = "pocketgoods-design-draft";
 const SESSION_STORAGE_KEY = "pocketgoods-design-draft-session";
 const MAX_LOCAL_STORAGE_CHARS = 4_000_000;
 const DRAFT_TABLE = "user_design_drafts";
+const HISTORY_TABLE = "user_design_snapshots";
+const DRAFT_SELECT_WITH_OUTPUT_SIZE = "canvas_json,thumbnail,product_type,output_size,updated_at";
+const DRAFT_SELECT_LEGACY = "canvas_json,thumbnail,product_type,updated_at";
+const HISTORY_SELECT = "id,canvas_json,thumbnail,product_type,output_size,created_at";
 
 export interface SavedDraft {
   canvasJSON: object;
   thumbnail: string;
   productType: string;
+  outputSize: OutputSize;
   savedAt: string; // ISO string
+}
+
+export interface SavedDesignHistoryEntry extends SavedDraft {
+  id: string;
 }
 
 type DraftRow = {
   canvas_json: object;
   thumbnail: string | null;
   product_type: string;
+  output_size?: string | null;
   updated_at: string;
 };
+
+type HistoryRow = {
+  id: string;
+  canvas_json: object;
+  thumbnail: string | null;
+  product_type: string;
+  output_size?: string | null;
+  created_at: string;
+};
+
+function normalizeOutputSize(value: string | null | undefined): OutputSize {
+  if (value === "A4" || value === "A5" || value === "A6") {
+    return value;
+  }
+  return "A5";
+}
 
 function rowToDraft(row: DraftRow): SavedDraft {
   return {
     canvasJSON: row.canvas_json,
     thumbnail: row.thumbnail ?? "",
     productType: row.product_type,
+    outputSize: normalizeOutputSize(row.output_size),
     savedAt: row.updated_at,
+  };
+}
+
+function historyRowToEntry(row: HistoryRow): SavedDesignHistoryEntry {
+  return {
+    id: row.id,
+    canvasJSON: row.canvas_json,
+    thumbnail: row.thumbnail ?? "",
+    productType: row.product_type,
+    outputSize: normalizeOutputSize(row.output_size),
+    savedAt: row.created_at,
   };
 }
 
 export function useSaveDesign(
   getJSON: () => object,
   getDataURL: () => string,
-  productType: string
+  productType: string,
+  outputSize: OutputSize,
 ) {
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [isDirty, setIsDirty] = useState(false);
@@ -61,11 +101,23 @@ export function useSaveDesign(
       } = await supabase.auth.getUser();
       if (!user) return localDraft;
 
-      const { data, error } = await supabase
-        .from(DRAFT_TABLE)
-        .select("canvas_json,thumbnail,product_type,updated_at")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const draftQuery = () =>
+        supabase
+          .from(DRAFT_TABLE)
+          .select(DRAFT_SELECT_WITH_OUTPUT_SIZE)
+          .eq("user_id", user.id)
+          .maybeSingle();
+      let { data, error } = await draftQuery();
+
+      if (error) {
+        const legacyResult = await supabase
+          .from(DRAFT_TABLE)
+          .select(DRAFT_SELECT_LEGACY)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        data = legacyResult.data;
+        error = legacyResult.error;
+      }
 
       if (error) {
         console.warn("Remote draft load skipped:", error.message);
@@ -87,16 +139,31 @@ export function useSaveDesign(
       } = await supabase.auth.getUser();
       if (!user) return false;
 
-      const { error } = await supabase.from(DRAFT_TABLE).upsert(
+      let { error } = await supabase.from(DRAFT_TABLE).upsert(
         {
           user_id: user.id,
           canvas_json: draft.canvasJSON,
           thumbnail: draft.thumbnail,
           product_type: draft.productType,
+          output_size: draft.outputSize,
           updated_at: draft.savedAt,
         },
         { onConflict: "user_id" },
       );
+
+      if (error) {
+        const legacyResult = await supabase.from(DRAFT_TABLE).upsert(
+          {
+            user_id: user.id,
+            canvas_json: draft.canvasJSON,
+            thumbnail: draft.thumbnail,
+            product_type: draft.productType,
+            updated_at: draft.savedAt,
+          },
+          { onConflict: "user_id" },
+        );
+        error = legacyResult.error;
+      }
 
       if (error) {
         console.warn("Remote draft save skipped:", error.message);
@@ -110,17 +177,71 @@ export function useSaveDesign(
     }
   }, []);
 
-  // 수동 저장
-  const save = useCallback(async () => {
+  const saveRemoteHistory = useCallback(async (draft: SavedDraft): Promise<boolean> => {
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { error } = await supabase.from(HISTORY_TABLE).insert({
+        user_id: user.id,
+        canvas_json: draft.canvasJSON,
+        thumbnail: draft.thumbnail,
+        product_type: draft.productType,
+        output_size: draft.outputSize,
+        created_at: draft.savedAt,
+      });
+
+      if (error) {
+        console.warn("Remote design history save skipped:", error.message);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.warn("Remote design history save skipped:", error);
+      return false;
+    }
+  }, []);
+
+  const loadHistory = useCallback(async (): Promise<SavedDesignHistoryEntry[]> => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from(HISTORY_TABLE)
+      .select(HISTORY_SELECT)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(24);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => historyRowToEntry(row as HistoryRow));
+  }, []);
+
+  const persistDraft = useCallback(async (options?: { recordHistory?: boolean }) => {
+    const recordHistory = options?.recordHistory ?? false;
     try {
       const draft: SavedDraft = {
         canvasJSON: getJSON(),
         thumbnail: getDataURL(),
         productType,
+        outputSize,
         savedAt: new Date().toISOString(),
       };
       const remoteSaved = await saveRemoteDraft(draft);
       if (remoteSaved) {
+        if (recordHistory) {
+          await saveRemoteHistory(draft);
+        }
         localStorage.removeItem(STORAGE_KEY);
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
         setSaveWarning(null);
@@ -158,7 +279,12 @@ export function useSaveDesign(
     } catch (e) {
       console.error("저장 실패:", e);
     }
-  }, [getJSON, getDataURL, productType, saveRemoteDraft]);
+  }, [getDataURL, getJSON, outputSize, productType, saveRemoteDraft, saveRemoteHistory]);
+
+  // 수동 저장
+  const save = useCallback(async () => {
+    await persistDraft({ recordHistory: true });
+  }, [persistDraft]);
 
   // 드래프트 삭제
   const clearDraft = useCallback(() => {
@@ -188,22 +314,22 @@ export function useSaveDesign(
   useEffect(() => {
     if (!isDirty) return;
     const timer = setInterval(() => {
-      save();
+      void persistDraft();
     }, 30_000);
     return () => clearInterval(timer);
-  }, [isDirty, save]);
+  }, [isDirty, persistDraft]);
 
   // Ctrl+S 단축키
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
-        save();
+        void save();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [save]);
 
-  return { save, loadDraft, clearDraft, markDirty, savedAt, isDirty, saveWarning };
+  return { save, loadDraft, loadHistory, clearDraft, markDirty, savedAt, isDirty, saveWarning };
 }
