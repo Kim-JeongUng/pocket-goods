@@ -9,7 +9,9 @@ const read = (path) => readFileSync(join(root, path), "utf8");
 const previewDialog = read("src/components/editor/PreviewDialog.tsx");
 const cartDialog = read("src/components/editor/OrderCartDialog.tsx");
 const orderDialog = read("src/components/editor/OrderDialog.tsx");
+const userMenu = read("src/components/auth/UserMenu.tsx");
 const orderCart = read("src/lib/order-cart.ts");
+const orderHistory = read("src/lib/order-history.ts");
 const previewPage = read("src/app/design/preview/preview-client.tsx");
 const editorLayout = read("src/components/editor/EditorLayout.tsx");
 const addressSearchFields = read("src/components/editor/AddressSearchFields.tsx");
@@ -32,6 +34,7 @@ const apiMain = read("../api/main.py");
 const apiVercelConfig = read("../api/vercel.json");
 const rendererApi = read("../api/services/renderer.py");
 const generateApi = read("../api/routers/generate.py");
+const supabaseSql = read("../../docs/supabase-user-persistence.sql");
 
 test("PortOne browser checkout is disabled on all editor order entry points", () => {
   for (const [name, source] of [
@@ -185,6 +188,28 @@ test("logged-in users persist shipping defaults and large drafts in Supabase", (
   assert.match(useSaveDesign, /from\(DRAFT_TABLE\)\.upsert/);
   assert.match(useSaveDesign, /loadDraft = useCallback\(async/);
   assert.match(editorLayout, /void loadDraft\(\)\.then/);
+});
+
+test("logged-in users persist order history and can open it from the profile drawer", () => {
+  assert.match(orderHistory, /user_order_history/);
+  assert.match(orderHistory, /saveOrderHistory/);
+  assert.match(orderHistory, /loadOrderHistory/);
+  assert.match(orderHistory, /summary_items/);
+  assert.match(supabaseSql, /create table if not exists public\.user_order_history/);
+  assert.match(supabaseSql, /shipping_snapshot jsonb/);
+  assert.match(userMenu, /loadOrderHistory/);
+  assert.match(userMenu, /DrawerContent/);
+  assert.match(userMenu, /주문 내역/);
+  assert.match(userMenu, /회원 정보와 이전 주문 내역을 확인할 수 있어요/);
+  for (const [name, source] of [
+    ["PreviewDialog", previewDialog],
+    ["OrderCartDialog", cartDialog],
+    ["OrderDialog", orderDialog],
+    ["preview-client", previewPage],
+  ]) {
+    assert.match(source, /saveOrderHistory/, `${name} must persist order history`);
+    assert.match(source, /orderStatus:\s*"received"/, `${name} must record received status`);
+  }
 });
 
 test("print renderer keeps Fabric text and pill name tags in exports", () => {

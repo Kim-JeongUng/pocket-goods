@@ -10,6 +10,7 @@ import AddressSearchFields from "@/components/editor/AddressSearchFields";
 import { useOrderProfile } from "@/hooks/useOrderProfile";
 import { API_BASE_URL, readApiError } from "@/lib/api";
 import type { ProductType } from "@/lib/assets";
+import { saveOrderHistory } from "@/lib/order-history";
 import { getOrderAmount, PRINT_PRICE_KRW, SHIPPING_FEE_KRW } from "@/lib/order-pricing";
 
 type OutputSize = "A4" | "A5" | "A6";
@@ -153,6 +154,28 @@ export default function OrderDialog({
       const verificationBody = await verification.json().catch(() => null);
       if (verificationBody?.emailSent === false) {
         throw new Error("주문은 접수됐지만 이메일 발송이 비활성화되어 있습니다. 이메일 설정을 확인해주세요.");
+      }
+
+      const historySaved = await saveOrderHistory({
+        paymentId,
+        orderName,
+        amount: orderAmount,
+        currency: "KRW",
+        productType,
+        outputSize,
+        orderStatus: "received",
+        shipping,
+        summaryItems: [
+          {
+            label: productName,
+            quantity: 1,
+            outputSize,
+            productType,
+          },
+        ],
+      });
+      if (!historySaved) {
+        console.warn("Order history save skipped after single order submit.");
       }
 
       setMessage("주문 확인 완료. 인쇄 파일을 저장하는 중입니다…");

@@ -82,42 +82,46 @@ create policy "Users can delete their own design draft"
   for delete
   using (auth.uid() = user_id);
 
-create table if not exists public.user_design_snapshots (
-  id uuid primary key default gen_random_uuid(),
+create table if not exists public.user_order_history (
+  payment_id text primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
+  order_name text not null,
+  amount integer not null,
+  currency text not null default 'KRW',
   product_type text not null default 'sticker',
-  output_size text not null default 'A5',
-  canvas_json jsonb not null,
-  thumbnail text,
+  output_size text,
+  order_status text not null default 'received',
+  shipping_snapshot jsonb not null default '{}'::jsonb,
+  summary_items jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
 
-create index if not exists user_design_snapshots_user_id_created_at_idx
-  on public.user_design_snapshots (user_id, created_at desc);
+create index if not exists user_order_history_user_created_idx
+  on public.user_order_history (user_id, created_at desc);
 
-alter table public.user_design_snapshots enable row level security;
+alter table public.user_order_history enable row level security;
 
-drop policy if exists "Users can read their own design snapshots" on public.user_design_snapshots;
-create policy "Users can read their own design snapshots"
-  on public.user_design_snapshots
+drop policy if exists "Users can read their own order history" on public.user_order_history;
+create policy "Users can read their own order history"
+  on public.user_order_history
   for select
   using (auth.uid() = user_id);
 
-drop policy if exists "Users can insert their own design snapshots" on public.user_design_snapshots;
-create policy "Users can insert their own design snapshots"
-  on public.user_design_snapshots
+drop policy if exists "Users can insert their own order history" on public.user_order_history;
+create policy "Users can insert their own order history"
+  on public.user_order_history
   for insert
   with check (auth.uid() = user_id);
 
-drop policy if exists "Users can update their own design snapshots" on public.user_design_snapshots;
-create policy "Users can update their own design snapshots"
-  on public.user_design_snapshots
+drop policy if exists "Users can update their own order history" on public.user_order_history;
+create policy "Users can update their own order history"
+  on public.user_order_history
   for update
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
-drop policy if exists "Users can delete their own design snapshots" on public.user_design_snapshots;
-create policy "Users can delete their own design snapshots"
-  on public.user_design_snapshots
+drop policy if exists "Users can delete their own order history" on public.user_order_history;
+create policy "Users can delete their own order history"
+  on public.user_order_history
   for delete
   using (auth.uid() = user_id);
