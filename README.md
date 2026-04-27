@@ -203,7 +203,7 @@ Resend를 사용할 경우 API key는 `RESEND_API_KEY`에 넣습니다. `onboard
 
 ## Supabase Setup
 
-Web app은 Supabase를 authentication과 사용자별 주문자 정보 / 디자인 draft persistence에 사용합니다.
+Web app은 Supabase를 authentication과 사용자별 주문자 정보 / 디자인 draft / 주문 내역 persistence에 사용합니다.
 
 Supabase Dashboard → SQL Editor에서 아래 SQL을 적용합니다.
 
@@ -215,6 +215,7 @@ docs/supabase-user-persistence.sql
 
 - `public.user_order_profiles`
 - `public.user_design_drafts`
+- `public.user_order_history`
 
 두 테이블은 authenticated user 기준 Row Level Security policy를 사용합니다.
 

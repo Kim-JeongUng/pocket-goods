@@ -10,6 +10,7 @@ import AddressSearchFields from "@/components/editor/AddressSearchFields";
 import { useOrderProfile } from "@/hooks/useOrderProfile";
 import type { ProductType } from "@/lib/assets";
 import { API_BASE_URL, readApiError } from "@/lib/api";
+import { saveOrderHistory } from "@/lib/order-history";
 import { createClient } from "@/lib/supabase/client";
 import { PRINT_PRICE_KRW, SHIPPING_FEE_KRW, type OutputSize } from "@/lib/order-pricing";
 import { addOrderCartItem, compactCartPreviewImage, createDefaultQuantities, EMPTY_QUANTITIES } from "@/lib/order-cart";
@@ -236,6 +237,28 @@ export default function PreviewDialog({
         const verificationBody = await verification.json().catch(() => null);
         if (verificationBody?.emailSent === false) {
           throw new Error("주문은 접수됐지만 이메일 발송이 비활성화되어 있습니다. 이메일 설정을 확인해주세요.");
+        }
+
+        const historySaved = await saveOrderHistory({
+          paymentId,
+          orderName,
+          amount,
+          currency: "KRW",
+          productType: "sticker",
+          outputSize: payload.outputSize,
+          orderStatus: "received",
+          shipping,
+          summaryItems: [
+            {
+              label: "현재 디자인",
+              quantity: totalQuantity,
+              outputSize: payload.outputSize,
+              productType: "sticker",
+            },
+          ],
+        });
+        if (!historySaved) {
+          console.warn("Order history save skipped after preview order submit.");
         }
 
         await fetch(`${API_BASE_URL}/api/export`, {

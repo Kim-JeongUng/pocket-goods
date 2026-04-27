@@ -23,8 +23,8 @@ npm run dev
   UX 동작 계약과 QA 체크리스트를 기준으로 리뷰합니다.
 - 미리보기, 칼선 안정성 안내, 주문자/배송 폼은 `src/components/editor/PreviewDialog.tsx`에 있습니다.
 - 주문함 묶음 저장 로직은 `src/lib/order-cart.ts`, 가격/배송비는 `src/lib/order-pricing.ts`를 기준으로 합니다.
-- 로그인 사용자의 주문자/배송 정보와 디자인 드래프트는 Supabase DB 테이블(`user_order_profiles`,
-  `user_design_drafts`)에 저장합니다. 운영 DB에는 `docs/supabase-user-persistence.sql`을 먼저 적용해야 하며,
+- 로그인 사용자의 주문자/배송 정보, 디자인 드래프트, 주문 내역은 Supabase DB 테이블(`user_order_profiles`,
+  `user_design_drafts`, `user_order_history`)에 저장합니다. 운영 DB에는 `docs/supabase-user-persistence.sql`을 먼저 적용해야 하며,
   테이블이 없으면 기존 브라우저 저장소 fallback으로 동작합니다.
 
 ### April 2026 manual-order requirements
