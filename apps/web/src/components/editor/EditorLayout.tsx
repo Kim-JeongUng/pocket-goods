@@ -13,15 +13,16 @@ import MobileActionBar from "@/components/editor/MobileActionBar";
 import MobileDrawer from "@/components/editor/MobileDrawer";
 import PreviewDialog from "@/components/editor/PreviewDialog";
 import OrderCartDialog from "@/components/editor/OrderCartDialog";
+import DesignHistoryDialog from "@/components/editor/DesignHistoryDialog";
 import { API_BASE_URL } from "@/lib/api";
 import type { ProductType } from "@/lib/assets";
 import { OUTPUT_CANVAS_SIZE, OUTPUT_SIZE_MM } from "@/lib/output-size";
+import type { OutputSize } from "@/lib/order-pricing";
 import { ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocale, tpl } from "@/lib/i18n/client";
 import type { OrderCartItem } from "@/lib/order-cart";
-
-type OutputSize = keyof typeof OUTPUT_SIZE_MM;
+import type { SavedDesignHistoryEntry } from "@/hooks/useSaveDesign";
 
 function getMobileFitZoom(size: OutputSize) {
   if (typeof window === "undefined") return 0.8;
@@ -41,6 +42,7 @@ export default function EditorLayout() {
   const [outputSize, setOutputSize] = useState<OutputSize>("A5");
   const [draftRestoreChecked, setDraftRestoreChecked] = useState(false);
   const [previewTab, setPreviewTab] = useState<"preview" | "order">("preview");
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [previewPayload, setPreviewPayload] = useState<{
     imageSrc: string;
     canvasJSON: object;
@@ -49,7 +51,7 @@ export default function EditorLayout() {
     revokeOnClose?: boolean;
   } | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
-  const [pendingCartEdit, setPendingCartEdit] = useState<{
+  const [pendingCanvasLoad, setPendingCanvasLoad] = useState<{
     canvasJSON: object;
     outputSize: OutputSize;
   } | null>(null);
@@ -83,10 +85,11 @@ export default function EditorLayout() {
     setCanvasSize,
   } = useCanvas(productType);
 
-  const { save, loadDraft, markDirty, savedAt, isDirty, saveWarning } = useSaveDesign(
+  const { save, loadDraft, loadHistory, markDirty, savedAt, isDirty, saveWarning } = useSaveDesign(
     toJSON,
     toDataURL,
-    productType
+    productType,
+    outputSize,
   );
 
   // 변경 시 dirty 표시
@@ -100,15 +103,15 @@ export default function EditorLayout() {
   }, [isCanvasReady, outputSize, setCanvasSize]);
 
   useEffect(() => {
-    if (!isCanvasReady || !pendingCartEdit) return;
-    if (outputSize !== pendingCartEdit.outputSize) {
-      setOutputSize(pendingCartEdit.outputSize);
+    if (!isCanvasReady || !pendingCanvasLoad) return;
+    if (outputSize !== pendingCanvasLoad.outputSize) {
+      setOutputSize(pendingCanvasLoad.outputSize);
       return;
     }
-    void loadDesign(pendingCartEdit.canvasJSON);
+    void loadDesign(pendingCanvasLoad.canvasJSON);
     markDirty();
-    setPendingCartEdit(null);
-  }, [isCanvasReady, loadDesign, markDirty, outputSize, pendingCartEdit]);
+    setPendingCanvasLoad(null);
+  }, [isCanvasReady, loadDesign, markDirty, outputSize, pendingCanvasLoad]);
 
   // 키보드 단축키
   useEffect(() => {
@@ -196,7 +199,10 @@ export default function EditorLayout() {
       const timeStr = savedDate.toLocaleString(locale);
       const restore = window.confirm(tpl(t.toolbar.restorePrompt, { timeStr }));
       if (restore) {
-        await loadDesign(draft.canvasJSON);
+        setPendingCanvasLoad({
+          canvasJSON: draft.canvasJSON,
+          outputSize: draft.outputSize,
+        });
       }
     }).finally(() => {
       if (!cancelled) setDraftRestoreChecked(true);
@@ -278,9 +284,16 @@ export default function EditorLayout() {
       return null;
     });
     setCartOpen(false);
-    setPendingCartEdit({
+    setPendingCanvasLoad({
       canvasJSON: item.canvasJSON,
       outputSize: item.outputSize,
+    });
+  }, []);
+
+  const handleRestoreHistoryEntry = useCallback(async (entry: SavedDesignHistoryEntry) => {
+    setPendingCanvasLoad({
+      canvasJSON: entry.canvasJSON,
+      outputSize: entry.outputSize,
     });
   }, []);
 
@@ -300,6 +313,7 @@ export default function EditorLayout() {
           onBringForward={bringForward}
           onSendBackward={sendBackward}
           onSave={save}
+          onOpenHistory={() => setHistoryOpen(true)}
           onExportPreview={() => handleOpenPreview("preview")}
           onOrder={() => handleOpenPreview("order")}
           onOpenCart={() => setCartOpen(true)}
@@ -309,6 +323,7 @@ export default function EditorLayout() {
       <div className="block md:hidden">
         <MobileHeader
           onSave={save}
+          onOpenHistory={() => setHistoryOpen(true)}
           onOpenCart={() => setCartOpen(true)}
           isDirty={isDirty}
           savedAt={savedAt}
@@ -453,6 +468,12 @@ export default function EditorLayout() {
             return null;
           })
         }
+      />
+      <DesignHistoryDialog
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        loadHistory={loadHistory}
+        onRestore={handleRestoreHistoryEntry}
       />
       <OrderCartDialog open={cartOpen} onClose={() => setCartOpen(false)} onEditItem={handleEditCartItem} />
     </div>

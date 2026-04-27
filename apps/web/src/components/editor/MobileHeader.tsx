@@ -3,19 +3,20 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Save, CheckCheck, ShoppingBag } from "lucide-react";
+import { Save, CheckCheck, ShoppingBag, History } from "lucide-react";
 import UserMenu from "@/components/auth/UserMenu";
 import { useLocale } from "@/lib/i18n/client";
 
 interface MobileHeaderProps {
   onSave: () => void;
+  onOpenHistory: () => void;
   onOpenCart: () => void;
   isDirty: boolean;
   savedAt: Date | null;
 }
 
 export default function MobileHeader({
-  onSave, onOpenCart, isDirty, savedAt,
+  onSave, onOpenHistory, onOpenCart, isDirty, savedAt,
 }: MobileHeaderProps) {
   const { t } = useLocale();
   const tb = t.toolbar;
@@ -46,6 +47,16 @@ export default function MobileHeader({
           title={tb.save}
         >
           <Save className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onOpenHistory}
+          className="h-8 w-8"
+          aria-label={tb.history}
+          title={tb.history}
+        >
+          <History className="w-4 h-4" />
         </Button>
         <Button
           variant="outline"

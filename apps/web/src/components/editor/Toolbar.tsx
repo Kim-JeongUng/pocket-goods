@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
-  Undo2, Redo2, Trash2, BringToFront, SendToBack, Eye, ShoppingBag, ShoppingCart, Save, CheckCheck, Loader2,
+  Undo2, Redo2, Trash2, BringToFront, SendToBack, Eye, ShoppingBag, ShoppingCart, Save, CheckCheck, Loader2, History,
 } from "lucide-react";
 import UserMenu from "@/components/auth/UserMenu";
 import { useLocale, tpl } from "@/lib/i18n/client";
@@ -22,6 +22,7 @@ interface ToolbarProps {
   onBringForward: () => void;
   onSendBackward: () => void;
   onSave: () => void;
+  onOpenHistory: () => void;
   onExportPreview: () => void;
   onOrder: () => void;
   onOpenCart: () => void;
@@ -30,7 +31,7 @@ interface ToolbarProps {
 
 export default function Toolbar({
   canUndo, canRedo, hasSelection, isDirty, savedAt,
-  onUndo, onRedo, onDelete, onBringForward, onSendBackward, onSave, onExportPreview, onOrder, onOpenCart, isExporting,
+  onUndo, onRedo, onDelete, onBringForward, onSendBackward, onSave, onOpenHistory, onExportPreview, onOrder, onOpenCart, isExporting,
 }: ToolbarProps) {
   const { locale, t } = useLocale();
   const tb = t.toolbar;
@@ -66,6 +67,9 @@ export default function Toolbar({
 
         <Button variant="outline" size="sm" onClick={onSave} title={`${tb.save} (${tb.saveShortcut})`}>
           <Save className="w-4 h-4 mr-1" />{tb.save}
+        </Button>
+        <Button variant="outline" size="sm" onClick={onOpenHistory} title={tb.history}>
+          <History className="w-4 h-4 mr-1" />{tb.history}
         </Button>
 
         <Separator orientation="vertical" className="h-6" />
